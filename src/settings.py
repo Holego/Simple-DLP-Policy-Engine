@@ -10,6 +10,7 @@ from pathlib import Path
 from src.detectors.scanner import DEFAULT_MAX_SCAN_BYTES
 
 DEFAULT_RETENTION_DAYS = 365
+DEFAULT_LAMBDA_POLICY = "policies.yaml"  # packaged next to the handler by scripts/build_lambda.py
 
 
 def _int(env: Mapping[str, str], name: str, default: int) -> int:
@@ -57,7 +58,7 @@ class LambdaSettings:
     table_name: str
     sns_topic_arn: str
     quarantine_bucket: str | None = None
-    policy_path: str = "policies.yaml"
+    policy_path: str = DEFAULT_LAMBDA_POLICY
     webhook_url: str | None = None
     max_scan_bytes: int = DEFAULT_MAX_SCAN_BYTES
     retention_days: int = DEFAULT_RETENTION_DAYS
@@ -72,7 +73,7 @@ class LambdaSettings:
             table_name=env["DLP_TABLE_NAME"].strip(),
             sns_topic_arn=env["DLP_SNS_TOPIC_ARN"].strip(),
             quarantine_bucket=_text(env, "DLP_QUARANTINE_BUCKET"),
-            policy_path=_text(env, "DLP_POLICY_PATH") or cls.policy_path,
+            policy_path=_text(env, "DLP_POLICY_PATH") or DEFAULT_LAMBDA_POLICY,
             webhook_url=_text(env, "DLP_WEBHOOK_URL"),
             max_scan_bytes=_int(env, "DLP_MAX_SCAN_BYTES", DEFAULT_MAX_SCAN_BYTES),
             retention_days=_int(env, "DLP_RETENTION_DAYS", DEFAULT_RETENTION_DAYS),
