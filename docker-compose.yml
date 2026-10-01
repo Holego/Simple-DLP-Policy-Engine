@@ -1,0 +1,21 @@
+# LocalStack for trying the AWS part without an AWS account. See the README.
+#
+# Version 3.8 is the last line that runs without an account. The current unified image
+# (localstack/localstack:latest) needs a LocalStack auth token; to use it, run
+#   LOCALSTACK_IMAGE=localstack/localstack:latest LOCALSTACK_AUTH_TOKEN=... docker compose up -d
+services:
+  localstack:
+    image: ${LOCALSTACK_IMAGE:-localstack/localstack:3.8}
+    ports:
+      - "127.0.0.1:4566:4566"
+    environment:
+      SERVICES: s3,dynamodb,sns,sqs,lambda,iam,logs,sts,cloudwatch,kms
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:-}
+      DEBUG: "0"
+    volumes:
+      # Lambda functions run in sibling containers started through the Docker socket.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - localstack-data:/var/lib/localstack
+
+volumes:
+  localstack-data:
