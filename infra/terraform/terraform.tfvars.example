@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars and adjust. terraform.tfvars is git-ignored.
+
+aws_region  = "eu-central-1"
+name_prefix = "dlp"
+environment = "dev"
+
+# alert_email = "security-team@example.com"
+# webhook_url = "https://hooks.slack.com/services/T000/B000/XXXX"
+
+# Monitor existing buckets as well (their notification configuration is replaced):
+# additional_monitored_buckets = ["partner-drop-bucket"]
+
+# Block in place instead of moving to a quarantine bucket:
+# enable_quarantine = false
+
+quarantine_retention_days = 90
+incident_retention_days   = 365
