@@ -63,6 +63,11 @@ class TestCreditCardDetector:
         assert self.detector.detect(f"trace-id a{number}b") == []
         assert self.detector.detect(f"order_{number}") == []
 
+    def test_digits_spread_over_tiny_or_huge_groups_are_not_a_card(self, card_numbers):
+        number = card_numbers(1)[0]
+        assert self.detector.detect(" ".join(number)) == []  # one digit per group
+        assert self.detector.detect(f"{number[:2]}-{number[2:]}") == []  # 2 + 14 digits
+
     def test_card_next_to_a_date_is_still_found(self, card_numbers):
         number = card_numbers(1)[0]
         found = self.detector.detect(f"2024-01-01 {number}")

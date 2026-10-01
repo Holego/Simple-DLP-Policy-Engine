@@ -104,3 +104,28 @@ def _isolated_environment(monkeypatch: pytest.MonkeyPatch):
 @pytest.fixture
 def rng() -> random.Random:
     return random.Random(7)
+
+
+def make_incident(**overrides):
+    """A minimal, valid incident for storage tests."""
+    from src.incident import Incident
+
+    fields = {
+        "incident_id": "a" * 32,
+        "evaluation_id": "e" * 16,
+        "timestamp": "2026-01-01T00:00:00.000Z",
+        "mode": "local",
+        "source": "/outbox/report.csv",
+        "rule": "card_data_to_external",
+        "severity": "high",
+        "priority": 30,
+        "declared_actions": ("alert", "quarantine"),
+        "effective_actions": ("quarantine", "alert"),
+        "suppressed_by": None,
+        "action_results": ({"action": "quarantine", "status": "ok", "detail": ""},),
+        "destination": {"channel": "email", "categories": ["external_email"]},
+        "findings": ({"type": "credit_card", "count": 1, "samples": ["****-****-****-1111"]},),
+        "file": {"name": "report.csv", "size": 10},
+    }
+    fields.update(overrides)
+    return Incident(**fields)
