@@ -1,0 +1,108 @@
+# Example DLP policy. Copy to config/policies.yaml and adjust.
+# Validate with:  python cli.py policy validate config/policies.yaml
+#
+# A rule fires when its condition holds for a scanned file:
+#   - "contains" / "contains_all" look at the detector findings (data types and counts)
+#   - "destination" looks at where the file is going (see the categories below)
+# Keys that sit side by side inside one condition are combined with AND. Use all_of,
+# any_of and not for explicit logic.
+
+version: 1
+
+settings:
+  # Recipient domains that count as internal. Subdomains match too.
+  corporate_domains:
+    - corp.example.com
+  # Partner domains that get the "trusted_domain" category (used for exceptions).
+  trusted_domains:
+    - partner.example.net
+  # What happens when several rules fire for the same file:
+  #   priority          - the highest-priority rule(s) decide the actions; the others are
+  #                       still recorded but flagged as suppressed (default)
+  #   most_restrictive  - the actions of every matching rule are combined
+  # Either way, "alert" is additive and a file gets at most one of quarantine/block
+  # (block is the stronger one).
+  conflict_resolution: priority
+
+# Data types:           credit_card, ssn, email
+# Destination categories: external_email, internal_email, public_s3, private_s3,
+#                       cloud_storage, removable_media, non_corporate_domain,
+#                       corporate_domain, trusted_domain, internal, unknown
+# Actions:              alert, quarantine, block
+# Severity:             low, medium, high, critical
+# Priority (optional):  0-1000, higher wins a conflict. Defaults to 10/20/30/40 for
+#                       low/medium/high/critical.
+
+rules:
+  # Card numbers OR SSNs (any of the listed types) heading to a risky destination.
+  - rule: card_data_to_external
+    description: Payment card or SSN data leaving through a risky channel.
+    severity: high
+    condition:
+      contains: [credit_card, ssn]
+      destination: [external_email, public_s3, non_corporate_domain]
+    action: [alert, quarantine]
+
+  # Threshold: more than 3 card numbers in a single file.
+  - rule: bulk_card_data_to_risky_destination
+    description: Four or more card numbers in one file going outside the company.
+    severity: critical
+    priority: 90
+    condition:
+      all_of:
+        - contains:
+            - type: credit_card
+              min_count: 4
+        - destination:
+            - external_email
+            - public_s3
+            - cloud_storage
+            - non_corporate_domain
+            - removable_media
+    action: [alert, block]
+
+  - rule: ssn_to_cloud_or_removable_media
+    description: SSNs copied to cloud storage or a USB drive.
+    severity: high
+    condition:
+      contains: [ssn]
+      destination: [cloud_storage, removable_media]
+    action: [alert, quarantine]
+
+  # contains_all: both types must be present in the same file (AND).
+  # Failing closed: if the source could not tell where the file goes, still raise an alert.
+  - rule: identity_bundle_unknown_destination
+    description: Card numbers together with SSNs and no known destination.
+    severity: medium
+    condition:
+      all_of:
+        - contains_all: [credit_card, ssn]
+        - destination: [unknown]
+    action: [alert]
+
+  - rule: bulk_email_list_export
+    description: A file with 50 or more email addresses going outside the company.
+    severity: medium
+    condition:
+      contains:
+        - type: email
+          min_count: 50
+      destination: [external_email, non_corporate_domain, cloud_storage]
+    action: [alert]
+
+  # Exception: a small transfer to a trusted partner is only reported. The high priority
+  # makes it win over card_data_to_external, which is then recorded as suppressed. The
+  # "not" keeps the exception from covering bulk transfers.
+  - rule: trusted_partner_small_transfer
+    description: Card or SSN data to a trusted partner, fewer than 4 card numbers.
+    severity: low
+    priority: 200
+    condition:
+      all_of:
+        - contains: [credit_card, ssn]
+        - destination: [trusted_domain]
+        - not:
+            contains:
+              - type: credit_card
+                min_count: 4
+    action: [alert]

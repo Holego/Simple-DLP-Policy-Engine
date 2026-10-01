@@ -1,0 +1,3 @@
+# Third-party packages vendored into the Lambda deployment package.
+# boto3/botocore are supplied by the Lambda Python runtime.
+PyYAML>=6.0,<7
