@@ -7,7 +7,7 @@ from .base import (
     ActionHandler,
     ActionResult,
 )
-from .block import LocalBlock, S3Block, is_blocked
+from .block import LocalBlock, S3Block, S3InPlaceQuarantine, is_blocked
 from .notifiers import LogNotifier, Notifier, SnsNotifier, WebhookNotifier
 from .payload import AlertPayload, build_alert_payload
 from .quarantine import LocalQuarantine, S3Quarantine
@@ -25,6 +25,7 @@ __all__ = [
     "LogNotifier",
     "Notifier",
     "S3Block",
+    "S3InPlaceQuarantine",
     "S3Object",
     "S3Quarantine",
     "SnsNotifier",

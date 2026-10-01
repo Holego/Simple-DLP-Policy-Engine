@@ -66,3 +66,21 @@ class S3Block:
             Tagging={"TagSet": [{"Key": key, "Value": value} for key, value in tags.items()]},
         )
         return ActionResult(self.name, "ok", f"tagged {TAG_STATUS}={STATUS_BLOCKED}")
+
+
+class S3InPlaceQuarantine(S3Block):
+    """Stands in for ``quarantine`` when no quarantine bucket is configured.
+
+    The object cannot be moved, so it is blocked in place instead: tagged and, through the
+    bucket policy, unreadable for everyone except the DLP function.
+    """
+
+    name = "quarantine"
+
+    def run(self, ctx: ActionContext) -> ActionResult:
+        result = super().run(ctx)
+        return ActionResult(
+            self.name,
+            result.status,
+            f"no quarantine bucket configured; blocked in place ({result.detail})",
+        )
